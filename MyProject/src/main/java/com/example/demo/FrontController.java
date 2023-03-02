@@ -7,6 +7,8 @@ import java.util.List;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,7 +23,9 @@ import com.example.beans.MovieDetails;
 import com.example.beans.OrderHistory;
 import com.example.beans.Seat;
 import com.example.service.CustomerDao;
+import com.example.service.EmailSenderService;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
 
 
@@ -249,15 +253,24 @@ public class FrontController {
 
 				m.addAttribute("seats", seatNo1);
 				session.setAttribute("user", object);
-				session.setAttribute("msg", "your seat book successsfully");
-				return "redirect:/home";
+				session.setAttribute("msg", "your seat booked successsfully");
+                return "redirect:/home";
 
-			} else {
-				System.out.println("Not ready your current date");
+			} 
+
+			
+			else {
+				System.out.println("Not ready");
 				return "redirect:/booking-seat?movieName=" + movieName;
 
 			}
-		} else {
+			
+			
+		} 
+		
+		
+		else {
+			
 			if (((date.isAfter(currentDate)) || (date.equals(currentDate)))
 					&& (date.isBefore(currentDate.plusMonths(1)) || date.equals(currentDate.plusMonths(1)))) {
 				Date date2 = Date.from(date.atStartOfDay(defaultZoneId).toInstant());
@@ -284,23 +297,30 @@ public class FrontController {
 						}
 
 					}
+					
 				}
 
 				m.addAttribute("seats", seatNo1);
 				session.setAttribute("user", object);
-				session.setAttribute("msg", "your seat book successsfully");
+				session.setAttribute("msg", "your seat booked successsfully");
 				return "redirect:/home";
-
-			} else {
-				System.out.println("ye date current date se pahle ki date hai");
+				
+			} 
+			
+			
+			else {
+				System.out.println("Not ready");
 				return "redirect:/booking-seat?movieName=" + movieName;
 
 			}
+			
 		}
 
 	}
-
-//	Order history
+	
+	
+			
+	
 	@GetMapping("/order-history")
 	public String history(HttpSession session, Model m) {
 		Date todayDate = new Date();
@@ -462,5 +482,15 @@ public class FrontController {
 			return "redirect:/home";
 		}
 	}
-
+	
+	@Autowired
+	private EmailSenderService service;
+	
+	@EventListener(ApplicationReadyEvent.class)
+	public void triggerMail() throws MessagingException {
+	
+	service.sendSimpleEmail( "spring.email.to@gmail.com", "Your ticket is booked", "Movie Ticket");
+		}
+	
 }
+
